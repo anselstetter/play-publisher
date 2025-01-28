@@ -1,0 +1,7 @@
+Usage:
+  play-publisher info <file> [flags]
+
+Flags:
+  -h, --help   help for info
+
+please provide a file to analyze

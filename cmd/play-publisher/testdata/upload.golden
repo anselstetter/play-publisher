@@ -1,0 +1,6 @@
+Application type: AAB
+Package name:     tld.domain.test
+Version name:     1.0
+Version code:     1
+Service account:  ../../internal/testdata/google-service-account.json
+Track:            internal

@@ -1,0 +1,96 @@
+package application
+
+import (
+	"errors"
+
+	"github.com/shogo82148/androidbinary/apk"
+	"github.com/xmxu/aab-parser"
+)
+
+var (
+	ErrorReadApp        = errors.New("could not open app")
+	ErrorGetVersionName = errors.New("could get version name")
+	ErrorGetVersionCode = errors.New("could get version code")
+)
+
+type ApplicationType int
+
+func (t ApplicationType) String() string {
+	switch t {
+	case ApplicationTypeAab:
+		return "AAB"
+	case ApplicationTypeApk:
+		return "APK"
+	case ApplicationTypeUnknown:
+		fallthrough
+	default:
+		return "Unknown"
+	}
+}
+
+const (
+	ApplicationTypeUnknown ApplicationType = iota
+	ApplicationTypeApk
+	ApplicationTypeAab
+)
+
+type ApplicationInfo struct {
+	ApplicationType ApplicationType
+	PackageName     string
+	VersionName     string
+	VersionCode     int64
+}
+
+type Analyzer struct{}
+
+func New() Analyzer {
+	return Analyzer{}
+}
+
+func (a Analyzer) Analyze(fileName string) (ApplicationInfo, error) {
+	info, err := a.infoAab(fileName)
+	if err == nil {
+		return info, nil
+	}
+	info, err = a.infoApk(fileName)
+	if err == nil {
+		return info, nil
+	}
+	return ApplicationInfo{}, err
+}
+
+func (a Analyzer) infoAab(fileName string) (ApplicationInfo, error) {
+	aab, err := aab.OpenFile(fileName)
+	if err != nil {
+		return ApplicationInfo{}, errors.Join(ErrorReadApp, err)
+	}
+	applicationInfo := ApplicationInfo{
+		ApplicationType: ApplicationTypeAab,
+		PackageName:     aab.PackageName(),
+		VersionName:     aab.Manifest().VersionName,
+		VersionCode:     aab.Manifest().VersionCode,
+	}
+	return applicationInfo, nil
+}
+
+func (a Analyzer) infoApk(fileName string) (ApplicationInfo, error) {
+	apk, err := apk.OpenFile(fileName)
+	if err != nil {
+		return ApplicationInfo{}, errors.Join(ErrorReadApp, err)
+	}
+	versionName, err := apk.Manifest().VersionName.String()
+	if err != nil {
+		return ApplicationInfo{}, errors.Join(ErrorGetVersionName, err)
+	}
+	versionCode, err := apk.Manifest().VersionCode.Int32()
+	if err != nil {
+		return ApplicationInfo{}, errors.Join(ErrorGetVersionCode, err)
+	}
+	applicationInfo := ApplicationInfo{
+		ApplicationType: ApplicationTypeApk,
+		PackageName:     apk.PackageName(),
+		VersionName:     versionName,
+		VersionCode:     int64(versionCode),
+	}
+	return applicationInfo, nil
+}

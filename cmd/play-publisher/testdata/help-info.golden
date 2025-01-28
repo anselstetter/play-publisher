@@ -1,0 +1,13 @@
+Prints information about the provided app in the following form:
+
+File name:        {file name}
+Application type: {aab|apk}
+Package name:     {package name}
+Version name:     {version name}
+Version code:     {version code}
+
+Usage:
+  play-publisher info <file> [flags]
+
+Flags:
+  -h, --help   help for info

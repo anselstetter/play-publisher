@@ -1,0 +1,16 @@
+A Play Store uploader for your convenience
+
+Usage:
+  play-publisher [flags]
+  play-publisher [command]
+
+Available Commands:
+  help          Help about any command
+  info          Display the package name and type of the app
+  upload        Upload an APK or AAB to the Play Store
+  version       Print the version
+
+Flags:
+  -h, --help   help for play-publisher
+
+Use "play-publisher [command] --help" for more information about a command.

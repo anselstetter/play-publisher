@@ -1,0 +1,7 @@
+Just prints the version and exits
+
+Usage:
+  play-publisher version [flags]
+
+Flags:
+  -h, --help   help for version

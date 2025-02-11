@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"os"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -144,7 +145,7 @@ func TestMain(t *testing.T) {
 	if *generate {
 		for _, tc := range tests {
 			buffer := bytes.NewBuffer([]byte{})
-			_ = run(tc.args, buffer, buffer, stubClient)
+			_ = run(tc.args, buffer, buffer, buildInfo, stubClient)
 
 			err := os.WriteFile("testdata/"+tc.golden+".golden", buffer.Bytes(), 0666)
 			assert.NoError(t, err)
@@ -157,7 +158,7 @@ func TestMain(t *testing.T) {
 			t.Parallel()
 
 			buffer := bytes.NewBuffer([]byte{})
-			exitCode := run(tc.args, buffer, buffer, stubClient)
+			exitCode := run(tc.args, buffer, buffer, buildInfo, stubClient)
 			golden, _ := os.ReadFile("testdata/" + tc.golden + ".golden")
 
 			if tc.substring {
@@ -168,4 +169,13 @@ func TestMain(t *testing.T) {
 			assert.Equals(t, exitCode, tc.exitCode)
 		})
 	}
+}
+
+func buildInfo() (info *debug.BuildInfo, ok bool) {
+	buildInfo := &debug.BuildInfo{
+		Settings: []debug.BuildSetting{
+			{Key: "-ldflags", Value: "-s -w -X main.Version=Test -s"},
+		},
+	}
+	return buildInfo, true
 }

@@ -41,7 +41,7 @@ The reason for the existence of this repository is that I couldn't find a standa
 ### Go
 
 ```
-go install github.com/anselstetter/play-publisher@latest
+go install github.com/anselstetter/play-publisher/cmd/play-publisher@latest
 ```
 
 ### Manually

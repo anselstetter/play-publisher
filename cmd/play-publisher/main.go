@@ -5,29 +5,30 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime/debug"
 
 	"github.com/anselstetter/play-publisher/internal/application"
 	"github.com/anselstetter/play-publisher/internal/cmd"
 	"github.com/anselstetter/play-publisher/internal/logger"
 	"github.com/anselstetter/play-publisher/internal/publisher"
+	"github.com/anselstetter/play-publisher/internal/version"
 )
 
-var Version string = "Dev"
-
 func main() {
-	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr, nil))
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr, debug.ReadBuildInfo, nil))
 }
 
-func run(args []string, stdout io.Writer, stderr io.Writer, client *http.Client) int {
+func run(args []string, stdout io.Writer, stderr io.Writer, buildInfoFunc version.BuildInfoFunc, client *http.Client) int {
 	var (
 		ctx       = context.Background()
+		version   = version.New(buildInfoFunc, "Dev")
 		analyzer  = application.New()
 		logger    = logger.New(logger.WithStdout(stdout), logger.WithStderr(stderr))
 		publisher = publisher.New(analyzer, logger, publisher.WithHttpClient(client))
 		root      = cmd.NewRootCommand()
 	)
 	root.AddCommand(
-		cmd.NewVersionCommand(Version, logger),
+		cmd.NewVersionCommand(version, logger),
 		cmd.NewInfoCommand(analyzer, logger),
 		cmd.NewUploadCommand(publisher, logger),
 		cmd.NewGenerateDocsCommand(),

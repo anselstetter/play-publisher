@@ -1,5 +1,5 @@
 # play-publisher
-![Coverage](https://img.shields.io/badge/Coverage-93.7%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-94.1%25-brightgreen)
 
 [Installation](#installation) | [Docs](#docs) | [Notes](#notes)
 

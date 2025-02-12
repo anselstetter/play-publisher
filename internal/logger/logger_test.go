@@ -10,6 +10,8 @@ import (
 
 func TestKVLog(t *testing.T) {
 	t.Run("should format entries", func(t *testing.T) {
+		t.Parallel()
+
 		stdout := bytes.NewBuffer([]byte{})
 		logger := logger.New(logger.WithStdout(stdout))
 
@@ -36,6 +38,8 @@ Third                     {a:a b:123 c:123.123}
 	})
 
 	t.Run("should return warning on uneven arguments on stderr", func(t *testing.T) {
+		t.Parallel()
+
 		stderr := bytes.NewBuffer([]byte{})
 		logger := logger.New(logger.WithStderr(stderr))
 
@@ -44,4 +48,33 @@ Third                     {a:a b:123 c:123.123}
 
 		assert.Equals(t, stderr.String(), want)
 	})
+}
+
+func TestStdOutWriter(t *testing.T) {
+	t.Parallel()
+
+	stdout := bytes.NewBuffer([]byte{})
+	logger := logger.New(logger.WithStdout(stdout))
+
+	assert.Equals(t, logger.StdoutWriter(), stdout)
+}
+
+func TestStdErrWriter(t *testing.T) {
+	t.Parallel()
+
+	stderr := bytes.NewBuffer([]byte{})
+	logger := logger.New(logger.WithStderr(stderr))
+
+	assert.Equals(t, logger.StderrWriter(), stderr)
+}
+
+func TestStdOutln(t *testing.T) {
+	t.Parallel()
+
+	stdout := bytes.NewBuffer([]byte{})
+	logger := logger.New(logger.WithStdout(stdout))
+
+	logger.Stdoutln("test")
+
+	assert.Equals(t, stdout.String(), "test\n")
 }

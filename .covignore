@@ -1,2 +1,6 @@
+# Test assertions
 github.com/anselstetter/play-publisher/internal/assert/assert.go
+# Internal documentation generation
 github.com/anselstetter/play-publisher/internal/cmd/generate_docs.go
+# This is tested indirectly via main_test.go and golden files
+github.com/anselstetter/play-publisher/internal/cmd

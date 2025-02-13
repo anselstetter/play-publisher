@@ -14,7 +14,7 @@ func ignoreAdditonalArgs(stderr io.Writer, n int) func(cmd *cobra.Command, args 
 
 		if len(additionalArgs) >= n {
 			if _, err := fmt.Fprintf(stderr, "Ignoring additional args: %s\n\n", strings.Join(additionalArgs, ", ")); err != nil {
-				// Ignore
+				_ = "ignore"
 			}
 		}
 	}

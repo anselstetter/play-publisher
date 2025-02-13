@@ -28,7 +28,7 @@ func (l Logger) StderrWriter() io.Writer {
 
 func (l Logger) Stdoutf(format string, a ...any) {
 	if _, err := fmt.Fprintf(l.options.stdout, format, a...); err != nil {
-		// Ignore
+		_ = "ignore"
 	}
 }
 
@@ -66,12 +66,12 @@ func (l Logger) StdoutTable(a ...any) {
 
 func (l Logger) Stdoutln(a ...any) {
 	if _, err := fmt.Fprintln(l.options.stdout, a...); err != nil {
-		// Ignore
+		_ = "ignore"
 	}
 }
 
 func (l Logger) Stderrf(format string, a ...any) {
 	if _, err := fmt.Fprintf(l.options.stderr, format, a...); err != nil {
-		// Ignore
+		_ = "ignore"
 	}
 }

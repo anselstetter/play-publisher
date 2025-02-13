@@ -135,26 +135,8 @@ function lint {
   echo "Installing tools"
   go install tool
 
-  echo "Running exhaustive"
-  exhaustive "$(root_directory)/..." || exitCode=1
-
-  echo "Running staticcheck"
-  staticcheck "$(root_directory)/..." || exitCode=1
-
-  echo "Running errcheck"
-  errcheck "$(root_directory)/..." || exitCode=1
-
-  echo "Running go vet"
-  go vet "$(root_directory)/..." || exitCode=1
-
-  echo "Running gocyclo"
-  gocyclo -over 15 "$(root_directory)" || exitCode=1
-
-  echo "Running ineffassign"
-  ineffassign "$(root_directory)/..." || exitCode=1
-
-  echo "Running misspell"
-  find . -type f | xargs misspell --error || exitCode=1
+  echo "Running golangci-lint"
+  golangci-lint run "$(root_directory)/..." || exitCode=1
 
   exit ${exitCode}
 }

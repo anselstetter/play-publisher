@@ -17,7 +17,7 @@ Version name:     {version name}
 Version code:     {version code}`
 
 func NewInfoCommand(analyzer application.Analyzer, logger logger.Logger) *cobra.Command {
-	infoCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:    "info <file>",
 		Short:  "Display the package name and type of the app",
 		Long:   synopsisInfo,
@@ -33,7 +33,7 @@ func NewInfoCommand(analyzer application.Analyzer, logger logger.Logger) *cobra.
 			return Info(fileName, analyzer, logger)
 		}),
 	}
-	return infoCmd
+	return cmd
 }
 
 func Info(fileName string, analyzer application.Analyzer, logger logger.Logger) error {

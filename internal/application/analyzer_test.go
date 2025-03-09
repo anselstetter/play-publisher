@@ -38,12 +38,12 @@ func TestApplication(t *testing.T) {
 		assert.Equals(t, got, want)
 	})
 
-	t.Run("should return application.ErrorReadApp", func(t *testing.T) {
+	t.Run("should return application.ErrAnalyze", func(t *testing.T) {
 		t.Parallel()
 
 		app := "not-existing"
 		_, err := application.New().Analyze(app)
-		assert.IsError(t, err, application.ErrorReadApp)
+		assert.IsError(t, err, application.ErrAnalyze)
 	})
 }
 

@@ -18,7 +18,7 @@ func NewUploadCommand(publisher publisher.Publisher, logger logger.Logger) *cobr
 		serviceAccount string
 		track          string
 	)
-	uploadCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:    "upload <file>",
 		Short:  "Upload an APK or AAB to the Play Store",
 		Long:   synopsisUpload,
@@ -35,11 +35,11 @@ func NewUploadCommand(publisher publisher.Publisher, logger logger.Logger) *cobr
 			return publisher.Upload(cmd.Context(), fileName, track, serviceAccount)
 		}),
 	}
-	uploadCmd.Flags().StringVarP(&serviceAccount, "service-account", "s", "", "the service account (required)")
-	uploadCmd.Flags().StringVarP(&track, "track", "t", "internal", "the track")
+	cmd.Flags().StringVarP(&serviceAccount, "service-account", "s", "", "the service account (required)")
+	cmd.Flags().StringVarP(&track, "track", "t", "internal", "the track")
 
-	if err := uploadCmd.MarkFlagRequired("service-account"); err != nil {
+	if err := cmd.MarkFlagRequired("service-account"); err != nil {
 		logger.Stderrf("Could not mark service-account as required: %s", err)
 	}
-	return uploadCmd
+	return cmd
 }

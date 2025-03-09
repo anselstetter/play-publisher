@@ -19,7 +19,7 @@ Yaml (yaml)`
 func NewGenerateDocsCommand() *cobra.Command {
 	var format string
 
-	docsCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:    "generate-docs <dir>",
 		Short:  "Generate docs",
 		Long:   synopsisGenerateDocs,
@@ -58,7 +58,7 @@ func NewGenerateDocsCommand() *cobra.Command {
 			}
 		},
 	}
-	docsCmd.Flags().StringVarP(&format, "format", "f", "md", "the doc type (md, man, yaml)")
+	cmd.Flags().StringVarP(&format, "format", "f", "md", "the doc type (md, man, yaml)")
 
-	return docsCmd
+	return cmd
 }

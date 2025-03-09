@@ -7,7 +7,7 @@ import (
 )
 
 func NewVersionCommand(version version.Version, logger logger.Logger) *cobra.Command {
-	versionCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the version",
 		Long:  "Just prints the version and exits",
@@ -15,5 +15,5 @@ func NewVersionCommand(version version.Version, logger logger.Logger) *cobra.Com
 			logger.Stdoutln(version.Version())
 		},
 	}
-	return versionCmd
+	return cmd
 }

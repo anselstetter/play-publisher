@@ -5,7 +5,7 @@ import (
 )
 
 func NewRootCommand() *cobra.Command {
-	rootCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "play-publisher",
 		Short: "Upload an app to the Play Store",
 		Long:  "A Play Store uploader for your convenience",
@@ -14,7 +14,7 @@ func NewRootCommand() *cobra.Command {
 		},
 		SilenceErrors: true,
 	}
-	rootCmd.Root().CompletionOptions.DisableDefaultCmd = true
+	cmd.Root().CompletionOptions.DisableDefaultCmd = true
 
-	return rootCmd
+	return cmd
 }

@@ -2,15 +2,16 @@ package application
 
 import (
 	"errors"
+	"os"
 
 	"github.com/shogo82148/androidbinary/apk"
 	"github.com/xmxu/aab-parser"
 )
 
 var (
-	ErrorReadApp        = errors.New("could not open app")
-	ErrorGetVersionName = errors.New("could get version name")
-	ErrorGetVersionCode = errors.New("could get version code")
+	ErrAnalyze = errors.New("could not analyze app")
+	ErrInfoAab = errors.New("could not get info for aab")
+	ErrInfoApk = errors.New("could not get info for apk")
 )
 
 type ApplicationType int
@@ -48,6 +49,10 @@ func New() Analyzer {
 }
 
 func (a Analyzer) Analyze(fileName string) (ApplicationInfo, error) {
+	_, err := os.Stat(fileName)
+	if err != nil {
+		return ApplicationInfo{}, errors.Join(ErrAnalyze, err)
+	}
 	info, err := a.infoAab(fileName)
 	if err == nil {
 		return info, nil
@@ -56,13 +61,13 @@ func (a Analyzer) Analyze(fileName string) (ApplicationInfo, error) {
 	if err == nil {
 		return info, nil
 	}
-	return ApplicationInfo{}, err
+	return ApplicationInfo{}, errors.Join(ErrAnalyze, err)
 }
 
 func (a Analyzer) infoAab(fileName string) (ApplicationInfo, error) {
 	aab, err := aab.OpenFile(fileName)
 	if err != nil {
-		return ApplicationInfo{}, errors.Join(ErrorReadApp, err)
+		return ApplicationInfo{}, errors.Join(ErrInfoAab, err)
 	}
 	applicationInfo := ApplicationInfo{
 		ApplicationType: ApplicationTypeAab,
@@ -76,15 +81,15 @@ func (a Analyzer) infoAab(fileName string) (ApplicationInfo, error) {
 func (a Analyzer) infoApk(fileName string) (ApplicationInfo, error) {
 	apk, err := apk.OpenFile(fileName)
 	if err != nil {
-		return ApplicationInfo{}, errors.Join(ErrorReadApp, err)
+		return ApplicationInfo{}, errors.Join(ErrInfoApk, err)
 	}
 	versionName, err := apk.Manifest().VersionName.String()
 	if err != nil {
-		return ApplicationInfo{}, errors.Join(ErrorGetVersionName, err)
+		return ApplicationInfo{}, errors.Join(ErrInfoApk, err)
 	}
 	versionCode, err := apk.Manifest().VersionCode.Int32()
 	if err != nil {
-		return ApplicationInfo{}, errors.Join(ErrorGetVersionCode, err)
+		return ApplicationInfo{}, errors.Join(ErrInfoApk, err)
 	}
 	applicationInfo := ApplicationInfo{
 		ApplicationType: ApplicationTypeApk,

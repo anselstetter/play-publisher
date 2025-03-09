@@ -26,15 +26,13 @@ const (
 )
 
 var (
-	ErrorUnhandled          = errors.New("unhandled. This is a bug")
-	ErrorAnalyzeApp         = errors.New("could not analyze app")
-	ErrorReadServiceAccount = errors.New("could not open service account")
-	ErrorCreateService      = errors.New("could not instantiate service")
-	ErrorCreateEdit         = errors.New("could create new edit")
-	ErrorUploadAab          = errors.New("could not upload aab")
-	ErrorUploadApk          = errors.New("could not upload apk")
-	ErrorUpdateTrack        = errors.New("could not update track")
-	ErrorCommitEdit         = errors.New("could not commit edit")
+	ErrUpload        = errors.New("could not upload app")
+	ErrCreateService = errors.New("could not instantiate service")
+	ErrStartEdit     = errors.New("could not start edit")
+	ErrUpdateTrack   = errors.New("could not update track")
+	ErrCommitEdit    = errors.New("could not commit edit")
+	ErrUploadAab     = errors.New("could not upload aab")
+	ErrUploadApk     = errors.New("could not upload apk")
 )
 
 type Publisher struct {
@@ -56,24 +54,21 @@ type Publisher struct {
 func (p Publisher) Upload(ctx context.Context, fileName string, track string, serviceAccount string) error {
 	applicationInfo, err := p.analyzer.Analyze(fileName)
 	if err != nil {
-		return errors.Join(ErrorAnalyzeApp, err)
+		return errors.Join(ErrUpload, err)
 	}
-
 	p.printInfo(applicationInfo, track, serviceAccount)
 
 	json, err := os.ReadFile(serviceAccount)
 	if err != nil {
-		return errors.Join(ErrorReadServiceAccount, err)
+		return errors.Join(ErrUpload, err)
 	}
-
 	service, err := p.createService(ctx, json)
 	if err != nil {
-		return errors.Join(ErrorCreateService, err)
+		return errors.Join(ErrUpload, err)
 	}
-
 	edit, err := p.startEdit(service, applicationInfo)
 	if err != nil {
-		return errors.Join(ErrorCreateEdit, err)
+		return errors.Join(ErrUpload, err)
 	}
 	versionCode := int64(0)
 
@@ -81,27 +76,25 @@ func (p Publisher) Upload(ctx context.Context, fileName string, track string, se
 	case application.ApplicationTypeAab:
 		versionCode, err = p.upload(service, applicationInfo, fileName, edit.Id, p.uploadAab)
 		if err != nil {
-			return errors.Join(ErrorUploadAab, err)
+			return errors.Join(ErrUpload, err)
 		}
 	case application.ApplicationTypeApk:
 		versionCode, err = p.upload(service, applicationInfo, fileName, edit.Id, p.uploadApk)
 		if err != nil {
-			return errors.Join(ErrorUploadApk, err)
+			return errors.Join(ErrUpload, err)
 		}
 	case application.ApplicationTypeUnknown:
-		return ErrorUnhandled
+		return ErrUpload
 	}
 
 	_, err = p.updateTrack(service, applicationInfo, track, edit, versionCode)
 	if err != nil {
-		return errors.Join(ErrorUpdateTrack, err)
+		return errors.Join(ErrUpload, err)
 	}
-
 	_, err = p.commit(service, applicationInfo, edit)
 	if err != nil {
-		return errors.Join(ErrorCommitEdit, err)
+		return errors.Join(ErrUpload, err)
 	}
-
 	return nil
 }
 
@@ -128,14 +121,22 @@ func (p Publisher) createService(ctx context.Context, json []byte) (*androidpubl
 	timer := p.duration("Creating service")
 	defer timer(" | Done")
 
-	return androidpublisher.NewService(ctx, apiOptions.WithCredentialsJSON(json), apiOptions.WithHTTPClient(p.options.httpClient))
+	service, err := androidpublisher.NewService(ctx, apiOptions.WithCredentialsJSON(json), apiOptions.WithHTTPClient(p.options.httpClient))
+	if err != nil {
+		return nil, errors.Join(ErrCreateService, err)
+	}
+	return service, nil
 }
 
 func (p Publisher) startEdit(service *androidpublisher.Service, applicationInfo application.ApplicationInfo) (*androidpublisher.AppEdit, error) {
 	timer := p.duration("Starting edit")
 	defer timer(" | Done")
 
-	return service.Edits.Insert(applicationInfo.PackageName, nil).Do()
+	edit, err := service.Edits.Insert(applicationInfo.PackageName, nil).Do()
+	if err != nil {
+		return nil, errors.Join(ErrStartEdit, err)
+	}
+	return edit, nil
 }
 
 func (p Publisher) updateTrack(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, track string, edit *androidpublisher.AppEdit, versionCode int64) (*androidpublisher.Track, error) {
@@ -149,18 +150,28 @@ func (p Publisher) updateTrack(service *androidpublisher.Service, applicationInf
 			Status:       trackReleaseStatusCompleted,
 		}},
 	}
-	return service.Edits.Tracks.
+	updatedTrack, err := service.Edits.Tracks.
 		Update(applicationInfo.PackageName, edit.Id, track, &releaseTrack).
 		Do()
+	if err != nil {
+		return nil, errors.Join(ErrUpdateTrack, err)
+	}
+	return updatedTrack, nil
+
 }
 
 func (p Publisher) commit(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, edit *androidpublisher.AppEdit) (*androidpublisher.AppEdit, error) {
 	timer := p.duration("Committing edit")
 	defer timer(" | Done")
 
-	return service.Edits.Commit(applicationInfo.PackageName, edit.Id).
+	edit, err := service.Edits.Commit(applicationInfo.PackageName, edit.Id).
 		ChangesNotSentForReview(true).
 		Do()
+	if err != nil {
+		return nil, errors.Join(ErrCommitEdit, err)
+	}
+	return edit, nil
+
 }
 
 // This function takes a higher order function to do the actual work.
@@ -200,9 +211,8 @@ func (p Publisher) uploadAab(service *androidpublisher.Service, applicationInfo 
 		Media(reader, googleapi.ContentType("application/octet-stream"), googleapi.ChunkSize(googleapi.MinUploadChunkSize)).
 		ProgressUpdater(func(current, _ int64) { p.printProgress(current, size) }).
 		Do()
-
 	if err != nil {
-		return 0, err
+		return 0, errors.Join(ErrUploadAab, err)
 	}
 	return bundle.VersionCode, nil
 }
@@ -218,7 +228,7 @@ func (p Publisher) uploadApk(service *androidpublisher.Service, applicationInfo 
 		ProgressUpdater(func(current, _ int64) { p.printProgress(current, size) }).
 		Do()
 	if err != nil {
-		return 0, err
+		return 0, errors.Join(ErrUploadApk, err)
 	}
 	return apk.VersionCode, nil
 }

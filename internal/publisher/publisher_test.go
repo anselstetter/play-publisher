@@ -54,7 +54,7 @@ func TestPublisher(t *testing.T) {
 		assert.Equals(t, *calls, []string{client.IdEdit, client.IdUploadApk, client.IdApp, client.IdTrack, client.IdCommit})
 	})
 
-	t.Run("should return publisher.ErrorAnalyzeApp", func(t *testing.T) {
+	t.Run("should return publisher.ErrUpload", func(t *testing.T) {
 		t.Parallel()
 
 		var (
@@ -64,11 +64,11 @@ func TestPublisher(t *testing.T) {
 		)
 		calls, err := upload(app, track, serviceAccount)
 
-		assert.IsError(t, err, publisher.ErrorAnalyzeApp)
+		assert.IsError(t, err, publisher.ErrUpload)
 		assert.Equals(t, *calls, []string{})
 	})
 
-	t.Run("should return publisher.ErrorReadServiceAccount", func(t *testing.T) {
+	t.Run("should return publisher.ErrorUpload", func(t *testing.T) {
 		t.Parallel()
 
 		var (
@@ -78,11 +78,11 @@ func TestPublisher(t *testing.T) {
 		)
 		calls, err := upload(app, track, serviceAccount)
 
-		assert.IsError(t, err, publisher.ErrorReadServiceAccount)
+		assert.IsError(t, err, publisher.ErrUpload)
 		assert.Equals(t, *calls, []string{})
 	})
 
-	t.Run("should return publisher.ErrorCreateEdit", func(t *testing.T) {
+	t.Run("should return publisher.ErrStartEdit", func(t *testing.T) {
 		t.Parallel()
 
 		var (
@@ -92,11 +92,11 @@ func TestPublisher(t *testing.T) {
 		)
 		calls, err := upload(app, track, serviceAccount, client.NewIdStatusCode(client.IdEdit, http.StatusInternalServerError))
 
-		assert.IsError(t, err, publisher.ErrorCreateEdit)
+		assert.IsError(t, err, publisher.ErrStartEdit)
 		assert.Equals(t, *calls, []string{client.IdEdit})
 	})
 
-	t.Run("should return publisher.ErrorUploadAab", func(t *testing.T) {
+	t.Run("should return publisher.ErrUploadAab", func(t *testing.T) {
 		t.Parallel()
 
 		var (
@@ -106,11 +106,11 @@ func TestPublisher(t *testing.T) {
 		)
 		calls, err := upload(app, track, serviceAccount, client.NewIdStatusCode(client.IdUploadAab, http.StatusInternalServerError))
 
-		assert.IsError(t, err, publisher.ErrorUploadAab)
+		assert.IsError(t, err, publisher.ErrUploadAab)
 		assert.Equals(t, *calls, []string{client.IdEdit, client.IdUploadAab})
 	})
 
-	t.Run("should return publisher.ErrorUploadApk", func(t *testing.T) {
+	t.Run("should return publisher.ErrUploadApk", func(t *testing.T) {
 		t.Parallel()
 
 		var (
@@ -120,11 +120,11 @@ func TestPublisher(t *testing.T) {
 		)
 		calls, err := upload(app, track, serviceAccount, client.NewIdStatusCode(client.IdUploadApk, http.StatusInternalServerError))
 
-		assert.IsError(t, err, publisher.ErrorUploadApk)
+		assert.IsError(t, err, publisher.ErrUploadApk)
 		assert.Equals(t, *calls, []string{client.IdEdit, client.IdUploadApk})
 	})
 
-	t.Run("should return publisher.ErrorUpdateTrack", func(t *testing.T) {
+	t.Run("should return publisher.ErrUpdateTrack", func(t *testing.T) {
 		t.Parallel()
 
 		var (
@@ -134,11 +134,11 @@ func TestPublisher(t *testing.T) {
 		)
 		calls, err := upload(app, track, serviceAccount, client.NewIdStatusCode(client.IdTrack, http.StatusInternalServerError))
 
-		assert.IsError(t, err, publisher.ErrorUpdateTrack)
+		assert.IsError(t, err, publisher.ErrUpdateTrack)
 		assert.Equals(t, *calls, []string{client.IdEdit, client.IdUploadAab, client.IdApp, client.IdTrack})
 	})
 
-	t.Run("should return publisher.ErrorCommitEdit", func(t *testing.T) {
+	t.Run("should return publisher.ErrCommitEdit", func(t *testing.T) {
 		t.Parallel()
 
 		var (
@@ -148,7 +148,7 @@ func TestPublisher(t *testing.T) {
 		)
 		calls, err := upload(app, track, serviceAccount, client.NewIdStatusCode(client.IdCommit, http.StatusInternalServerError))
 
-		assert.IsError(t, err, publisher.ErrorCommitEdit)
+		assert.IsError(t, err, publisher.ErrCommitEdit)
 		assert.Equals(t, *calls, []string{client.IdEdit, client.IdUploadAab, client.IdApp, client.IdTrack, client.IdCommit})
 	})
 }

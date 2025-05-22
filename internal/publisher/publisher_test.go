@@ -21,7 +21,7 @@ func TestPublisher(t *testing.T) {
 		logger := logger.New(logger.WithStdout(buffer), logger.WithStderr(buffer))
 
 		err := publisher.New(analyzer, logger, publisher.WithHttpClient(c)).
-			Upload(context.Background(), app, track, serviceAccount)
+			Upload(context.Background(), app, track, publisher.StatusCompleted, serviceAccount)
 
 		return calls, err
 	}
@@ -150,5 +150,52 @@ func TestPublisher(t *testing.T) {
 
 		assert.IsError(t, err, publisher.ErrCommitEdit)
 		assert.Equals(t, *calls, []string{client.IdEdit, client.IdUploadAab, client.IdApp, client.IdTrack, client.IdCommit})
+	})
+}
+
+func TestToStatus(t *testing.T) {
+	t.Run("should return publisher.StatusCompleted", func(t *testing.T) {
+		t.Parallel()
+
+		status, err := publisher.ToStatus("completed")
+
+		assert.NoError(t, err)
+		assert.Equals(t, *status, publisher.StatusCompleted)
+	})
+
+	t.Run("should return publisher.StatusInProgress", func(t *testing.T) {
+		t.Parallel()
+
+		status, err := publisher.ToStatus("inProgress")
+
+		assert.NoError(t, err)
+		assert.Equals(t, *status, publisher.StatusInProgress)
+	})
+
+	t.Run("should return publisher.StatusDraft", func(t *testing.T) {
+		t.Parallel()
+
+		status, err := publisher.ToStatus("draft")
+
+		assert.NoError(t, err)
+		assert.Equals(t, *status, publisher.StatusDraft)
+	})
+
+	t.Run("should return publisher.StatusHalted", func(t *testing.T) {
+		t.Parallel()
+
+		status, err := publisher.ToStatus("halted")
+
+		assert.NoError(t, err)
+		assert.Equals(t, *status, publisher.StatusHalted)
+	})
+
+	t.Run("should return publisher.ErrConvertStatus", func(t *testing.T) {
+		t.Parallel()
+
+		status, err := publisher.ToStatus("invalid")
+
+		assert.IsError(t, err, publisher.ErrConvertStatus)
+		assert.Equals(t, status, (*publisher.Status)(nil))
 	})
 }

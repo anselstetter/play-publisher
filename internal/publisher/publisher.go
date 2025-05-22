@@ -16,13 +16,19 @@ import (
 
 type uploaderFunc func(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, editId string, reader io.Reader, size int64) (int64, error)
 
+type Status string
+
+func (s Status) String() string {
+	return string(s)
+}
+
 const clearLine = "\033[1A\033[K"
 
 const (
-	trackReleaseStatusCompleted  = "completed"
-	trackReleaseStatusInProgress = "inProgress"
-	trackReleaseStatusDraft      = "draft"
-	trackReleaseStatusHalted     = "halted"
+	StatusCompleted  Status = "completed"
+	StatusInProgress Status = "inProgress"
+	StatusDraft      Status = "draft"
+	StatusHalted     Status = "halted"
 )
 
 var (
@@ -33,6 +39,7 @@ var (
 	ErrCommitEdit    = errors.New("could not commit edit")
 	ErrUploadAab     = errors.New("could not upload aab")
 	ErrUploadApk     = errors.New("could not upload apk")
+	ErrConvertStatus = errors.New("could not convert status")
 )
 
 type Publisher struct {
@@ -51,12 +58,12 @@ type Publisher struct {
 //
 // Eventually the edit has to be committed.
 // Note: When committing the edit, a review could be triggered, which is not done here.
-func (p Publisher) Upload(ctx context.Context, fileName string, track string, serviceAccount string) error {
+func (p Publisher) Upload(ctx context.Context, fileName string, track string, status Status, serviceAccount string) error {
 	applicationInfo, err := p.analyzer.Analyze(fileName)
 	if err != nil {
 		return errors.Join(ErrUpload, err)
 	}
-	p.printInfo(applicationInfo, track, serviceAccount)
+	p.printInfo(applicationInfo, track, status, serviceAccount)
 
 	json, err := os.ReadFile(serviceAccount)
 	if err != nil {
@@ -87,7 +94,7 @@ func (p Publisher) Upload(ctx context.Context, fileName string, track string, se
 		return ErrUpload
 	}
 
-	_, err = p.updateTrack(service, applicationInfo, track, edit, versionCode)
+	_, err = p.updateTrack(service, applicationInfo, track, status, edit, versionCode)
 	if err != nil {
 		return errors.Join(ErrUpload, err)
 	}
@@ -98,7 +105,7 @@ func (p Publisher) Upload(ctx context.Context, fileName string, track string, se
 	return nil
 }
 
-func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track string, serviceAccount string) {
+func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track string, status Status, serviceAccount string) {
 	p.logger.StdoutTable(
 		"Application type:", applicationInfo.ApplicationType,
 		"Package name:", applicationInfo.PackageName,
@@ -106,6 +113,7 @@ func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track 
 		"Version code:", applicationInfo.VersionCode,
 		"Service account:", serviceAccount,
 		"Track:", track,
+		"Status", status,
 	)
 	p.logger.Stdoutln()
 }
@@ -139,7 +147,7 @@ func (p Publisher) startEdit(service *androidpublisher.Service, applicationInfo 
 	return edit, nil
 }
 
-func (p Publisher) updateTrack(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, track string, edit *androidpublisher.AppEdit, versionCode int64) (*androidpublisher.Track, error) {
+func (p Publisher) updateTrack(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, track string, status Status, edit *androidpublisher.AppEdit, versionCode int64) (*androidpublisher.Track, error) {
 	timer := p.duration("Updating track")
 	defer timer(" | Done")
 
@@ -147,7 +155,7 @@ func (p Publisher) updateTrack(service *androidpublisher.Service, applicationInf
 		Track: track,
 		Releases: []*androidpublisher.TrackRelease{{
 			VersionCodes: []int64{versionCode},
-			Status:       trackReleaseStatusCompleted,
+			Status:       status.String(),
 		}},
 	}
 	updatedTrack, err := service.Edits.Tracks.
@@ -252,4 +260,22 @@ func New(analyzer application.Analyzer, logger logger.Logger, opts ...option) Pu
 		logger:   logger,
 		options:  options,
 	}
+}
+
+func ToStatus(status string) (*Status, error) {
+	var ret Status
+
+	switch status {
+	case "inProgress":
+		ret = StatusInProgress
+	case "draft":
+		ret = StatusDraft
+	case "halted":
+		ret = StatusHalted
+	case "completed":
+		ret = StatusCompleted
+	default:
+		return nil, ErrConvertStatus
+	}
+	return &ret, nil
 }

@@ -15,9 +15,10 @@ The track is optional and defaults to "internal", if omitted`
 
 func NewUploadCommand(publisher publisher.Publisher, logger logger.Logger) *cobra.Command {
 	var (
-		serviceAccount string
-		track          string
-		status         string
+		serviceAccount          string
+		track                   string
+		status                  string
+		changesNotSentForReview bool
 	)
 	cmd := &cobra.Command{
 		Use:    "upload <file>",
@@ -37,12 +38,13 @@ func NewUploadCommand(publisher publisher.Publisher, logger logger.Logger) *cobr
 			fileName := args[0]
 			status, _ := toStatus(status)
 
-			return publisher.Upload(cmd.Context(), fileName, track, *status, serviceAccount)
+			return publisher.Upload(cmd.Context(), fileName, track, *status, changesNotSentForReview, serviceAccount)
 		}),
 	}
 	cmd.Flags().StringVarP(&serviceAccount, "service-account", "s", "", "the service account (required)")
 	cmd.Flags().StringVarP(&track, "track", "t", "internal", "the track")
 	cmd.Flags().StringVarP(&status, "status", "S", "completed", "status (completed, inProgress, draft, halted)")
+	cmd.Flags().BoolVarP(&changesNotSentForReview, "skip-review", "r", true, "skip review (changesNotSentForReview)")
 
 	if err := cmd.MarkFlagRequired("service-account"); err != nil {
 		logger.Stderrf("Could not mark service-account as required: %s", err)

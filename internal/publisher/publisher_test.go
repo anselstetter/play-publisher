@@ -21,7 +21,7 @@ func TestPublisher(t *testing.T) {
 		logger := logger.New(logger.WithStdout(buffer), logger.WithStderr(buffer))
 
 		err := publisher.New(analyzer, logger, publisher.WithHttpClient(c)).
-			Upload(context.Background(), app, track, publisher.StatusCompleted, serviceAccount)
+			Upload(context.Background(), app, track, publisher.StatusCompleted, true, serviceAccount)
 
 		return calls, err
 	}

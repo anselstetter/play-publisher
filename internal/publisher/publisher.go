@@ -57,13 +57,13 @@ type Publisher struct {
 // otherwise the app would only be visible in the bundle explorer.
 //
 // Eventually the edit has to be committed.
-// Note: When committing the edit, a review could be triggered, which is not done here.
-func (p Publisher) Upload(ctx context.Context, fileName string, track string, status Status, serviceAccount string) error {
+// Note: When committing the edit, a review could be triggered, which is not done by default.
+func (p Publisher) Upload(ctx context.Context, fileName string, track string, status Status, changesNotSentForReview bool, serviceAccount string) error {
 	applicationInfo, err := p.analyzer.Analyze(fileName)
 	if err != nil {
 		return errors.Join(ErrUpload, err)
 	}
-	p.printInfo(applicationInfo, track, status, serviceAccount)
+	p.printInfo(applicationInfo, track, status, changesNotSentForReview, serviceAccount)
 
 	json, err := os.ReadFile(serviceAccount)
 	if err != nil {
@@ -98,14 +98,14 @@ func (p Publisher) Upload(ctx context.Context, fileName string, track string, st
 	if err != nil {
 		return errors.Join(ErrUpload, err)
 	}
-	_, err = p.commit(service, applicationInfo, edit)
+	_, err = p.commit(service, applicationInfo, edit, changesNotSentForReview)
 	if err != nil {
 		return errors.Join(ErrUpload, err)
 	}
 	return nil
 }
 
-func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track string, status Status, serviceAccount string) {
+func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track string, status Status, changesNotSentForReview bool, serviceAccount string) {
 	p.logger.StdoutTable(
 		"Application type:", applicationInfo.ApplicationType,
 		"Package name:", applicationInfo.PackageName,
@@ -113,7 +113,8 @@ func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track 
 		"Version code:", applicationInfo.VersionCode,
 		"Service account:", serviceAccount,
 		"Track:", track,
-		"Status", status,
+		"Status:", status,
+		"Skip review:", changesNotSentForReview,
 	)
 	p.logger.Stdoutln()
 }
@@ -168,12 +169,12 @@ func (p Publisher) updateTrack(service *androidpublisher.Service, applicationInf
 
 }
 
-func (p Publisher) commit(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, edit *androidpublisher.AppEdit) (*androidpublisher.AppEdit, error) {
+func (p Publisher) commit(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, edit *androidpublisher.AppEdit, changesNotSentForReview bool) (*androidpublisher.AppEdit, error) {
 	timer := p.duration("Committing edit")
 	defer timer(" | Done")
 
 	edit, err := service.Edits.Commit(applicationInfo.PackageName, edit.Id).
-		ChangesNotSentForReview(true).
+		ChangesNotSentForReview(changesNotSentForReview).
 		Do()
 	if err != nil {
 		return nil, errors.Join(ErrCommitEdit, err)

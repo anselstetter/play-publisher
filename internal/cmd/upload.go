@@ -15,10 +15,9 @@ The track is optional and defaults to "internal", if omitted`
 
 func NewUploadCommand(publisher publisher.Publisher, logger logger.Logger) *cobra.Command {
 	var (
-		serviceAccount          string
-		track                   string
-		status                  string
-		changesNotSentForReview bool
+		serviceAccount string
+		track          string
+		status         string
 	)
 	cmd := &cobra.Command{
 		Use:    "upload <file>",
@@ -37,14 +36,19 @@ func NewUploadCommand(publisher publisher.Publisher, logger logger.Logger) *cobr
 		RunE: silenceUsageE(func(cmd *cobra.Command, args []string) error {
 			fileName := args[0]
 			status, _ := toStatus(status)
+			var changesNotSentForReview *bool
 
+			if cmd.Flags().Changed("skip-review") {
+				v, _ := cmd.Flags().GetBool("skip-review")
+				changesNotSentForReview = &v
+			}
 			return publisher.Upload(cmd.Context(), fileName, track, *status, changesNotSentForReview, serviceAccount)
 		}),
 	}
 	cmd.Flags().StringVarP(&serviceAccount, "service-account", "s", "", "the service account (required)")
 	cmd.Flags().StringVarP(&track, "track", "t", "internal", "the track")
 	cmd.Flags().StringVarP(&status, "status", "S", "completed", "status (completed, inProgress, draft, halted)")
-	cmd.Flags().BoolVarP(&changesNotSentForReview, "skip-review", "r", true, "skip review (changesNotSentForReview)")
+	cmd.Flags().BoolP("skip-review", "r", false, "skip review (changesNotSentForReview)")
 
 	if err := cmd.MarkFlagRequired("service-account"); err != nil {
 		logger.Stderrf("Could not mark service-account as required: %s", err)

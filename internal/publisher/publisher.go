@@ -3,6 +3,7 @@ package publisher
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -58,7 +59,7 @@ type Publisher struct {
 //
 // Eventually the edit has to be committed.
 // Note: When committing the edit, a review could be triggered, which is not done by default.
-func (p Publisher) Upload(ctx context.Context, fileName string, track string, status Status, changesNotSentForReview bool, serviceAccount string) error {
+func (p Publisher) Upload(ctx context.Context, fileName string, track string, status Status, changesNotSentForReview *bool, serviceAccount string) error {
 	applicationInfo, err := p.analyzer.Analyze(fileName)
 	if err != nil {
 		return errors.Join(ErrUpload, err)
@@ -105,7 +106,11 @@ func (p Publisher) Upload(ctx context.Context, fileName string, track string, st
 	return nil
 }
 
-func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track string, status Status, changesNotSentForReview bool, serviceAccount string) {
+func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track string, status Status, changesNotSentForReview *bool, serviceAccount string) {
+	skipReview := "not set"
+	if changesNotSentForReview != nil {
+		skipReview = fmt.Sprintf("%t", *changesNotSentForReview)
+	}
 	p.logger.StdoutTable(
 		"Application type:", applicationInfo.ApplicationType,
 		"Package name:", applicationInfo.PackageName,
@@ -114,7 +119,7 @@ func (p Publisher) printInfo(applicationInfo application.ApplicationInfo, track 
 		"Service account:", serviceAccount,
 		"Track:", track,
 		"Status:", status,
-		"Skip review:", changesNotSentForReview,
+		"Skip review:", skipReview,
 	)
 	p.logger.Stdoutln()
 }
@@ -169,13 +174,16 @@ func (p Publisher) updateTrack(service *androidpublisher.Service, applicationInf
 
 }
 
-func (p Publisher) commit(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, edit *androidpublisher.AppEdit, changesNotSentForReview bool) (*androidpublisher.AppEdit, error) {
+func (p Publisher) commit(service *androidpublisher.Service, applicationInfo application.ApplicationInfo, edit *androidpublisher.AppEdit, changesNotSentForReview *bool) (*androidpublisher.AppEdit, error) {
 	timer := p.duration("Committing edit")
 	defer timer(" | Done")
 
-	edit, err := service.Edits.Commit(applicationInfo.PackageName, edit.Id).
-		ChangesNotSentForReview(changesNotSentForReview).
-		Do()
+	commit := service.Edits.Commit(applicationInfo.PackageName, edit.Id)
+	if changesNotSentForReview != nil {
+		commit = commit.ChangesNotSentForReview(*changesNotSentForReview)
+	}
+
+	edit, err := commit.Do()
 	if err != nil {
 		return nil, errors.Join(ErrCommitEdit, err)
 	}

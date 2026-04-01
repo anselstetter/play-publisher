@@ -1,6 +1,6 @@
 module github.com/anselstetter/play-publisher
 
-go 1.24.0
+go 1.26.1
 
 require (
 	github.com/shogo82148/androidbinary v1.0.5
